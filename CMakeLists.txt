@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-
+set(CMAKE_CXX_FLAGS "-frounding-math")
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -81,9 +81,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES rrtnominal
-#  CATKIN_DEPENDS environment_generator ompl roscpp shapes
+  INCLUDE_DIRS include
+  LIBRARIES rrtnominal
+  CATKIN_DEPENDS environment_generator ompl roscpp shapes
 #  DEPENDS system_lib
 )
 
@@ -95,6 +95,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+	include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -105,6 +106,19 @@ include_directories(
 
 ## Declare a cpp executable
 # add_executable(rrtnominal_node src/rrtnominal_node.cpp)
+
+file(GLOB_RECURSE env_SOURCES src/*.cpp src/*.c)
+add_library(${PROJECT_NAME} ${env_SOURCES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+
+file( GLOB APP_SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/examples examples/*.cpp )
+foreach( testsourcefile ${APP_SOURCES} )
+    # I used a simple string replace, to cut off .cpp.
+    string( REPLACE ".cpp" "" testname ${testsourcefile} )
+    add_executable( ${PROJECT_NAME}_${testname} examples/${testsourcefile} )
+    # Make sure YourLib is linked to each app
+    target_link_libraries( ${PROJECT_NAME}_${testname} ${PROJECT_NAME} ${catkin_LIBRARIES})
+endforeach( testsourcefile ${APP_SOURCES} )
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
