@@ -37,6 +37,11 @@ RRTnominal::RRTnominal(const base::SpaceInformationPtr &si) : base::Planner(si, 
     collisionChecks_ = 0;
     bestCost_ = base::Cost(std::numeric_limits<double>::quiet_NaN());
 
+    /* My addition */
+    exploreBias_ = 0.05;
+    radius_ = 0.1;
+    /* End of my addition */
+
     Planner::declareParam<double>("range", this, &RRTnominal::setRange, &RRTnominal::getRange, "0.:1.:10000.");
     Planner::declareParam<double>("goal_bias", this, &RRTnominal::setGoalBias, &RRTnominal::getGoalBias, "0.:.05:1.");
     Planner::declareParam<bool>("delay_collision_checking", this, &RRTnominal::setDelayCC, &RRTnominal::getDelayCC, "0,1");
@@ -160,15 +165,52 @@ ompl::base::PlannerStatus RRTnominal::solve(const base::PlannerTerminationCondit
     // our functor for sorting nearest neighbors
     CostIndexCompare compareFn(costs, *opt_);
 
+    double startX, startY, goalX, goalY, xdiff, ydiff;
+    if(si_->getStateSpace()->getType()==base::STATE_SPACE_SE2) {
+    	base::Goal *goal = pdef_->getGoal().get();
+	    base::GoalState* goalstateptr = goal->as<base::GoalState>();
+	    base::State *goalstate = goalstateptr->getState();
+	    base::SE2StateSpace::StateType * goalst = goalstate->as<base::SE2StateSpace::StateType>();
+	    goalX = goalst->getX();
+	    goalY = goalst->getY();
+
+	    base::SE2StateSpace::StateType* startst = pdef_->getStartState(0)->as<base::SE2StateSpace::StateType>();
+	    startX = startst->getX();
+	    startY = startst->getY();
+
+	    xdiff = goalX - startX;
+	    ydiff = goalY - startY;
+    }
+
     while (ptc == false)
     {
         iterations_++;
-        if (goal_s && goalMotions_.size() < goal_s->maxSampleCount() && rng_.uniform01() < goalBias_ && goal_s->canSample()) {
-            goal_s->sampleGoal(rstate);
-        }
-        else {
-            sampler_->sampleUniform(rstate);
-        }
+        if(si_->getStateSpace()->getType()!=base::STATE_SPACE_SE2) {
+	        if (goal_s && goalMotions_.size() < goal_s->maxSampleCount() && rng_.uniform01() < goalBias_ && goal_s->canSample()) {
+	            goal_s->sampleGoal(rstate);
+	        }
+	        else {
+	            sampler_->sampleUniform(rstate);
+	        }
+	      }
+	      else {
+	      	if (rng_.uniform01() < exploreBias_) {
+	      		sampler_->sampleUniform(rstate);
+	      	}
+	      	else {
+	      		double t = rng_.uniform01();
+
+	      		double sampleX = startX + xdiff*t;
+	      		double sampleY = startY + ydiff*t;
+
+	      		base::State* samplestate = si_->allocState();
+    				base::SE2StateSpace::StateType* samplest = samplestate->as<base::SE2StateSpace::StateType>();
+    				samplest->setXY(sampleX, sampleY);
+    				base::State* nearSt = samplest;
+
+    				sampler_->sampleUniformNear(nearSt, rstate, radius_);
+	      	}
+	      }
 
         // find closest state in the tree
         Motion *nmotion = nn_->nearest(rmotion);

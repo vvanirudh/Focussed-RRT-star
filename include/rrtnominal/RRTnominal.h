@@ -97,6 +97,40 @@ class RRTnominal : public base::Planner
 
 	virtual void setup(void);
 
+	/* My addition */
+	/**
+	 * \brief Sets the exploration bias
+	 * @param exploreBias The probability with which it should explore
+	 */
+	void setExploreBias(double exploreBias) {
+		exploreBias_ = exploreBias;
+	}
+
+	/**
+	 * \brief Gets the exploration bias 
+	 * @return  The probability with which it explores
+	 */
+	double getExploreBias(void) {
+		return exploreBias_;
+	}
+
+	/**
+	 * \brief Sets the tunnel radius
+	 * @param radius The tunnel radius
+	 */
+	void setRadius(double radius) {
+		radius_ = radius;
+	}
+
+	/**
+	 * \brief Returns the tunnel radius
+	 * @return  The radius of the tunnel
+	 */
+	double getRadius(void) {
+		return radius_;
+	}
+	/* End of my addition */
+
 	///////////////////////////////////////
 	// Planner progress property functions
 	std::string getIterationCount(void) const;
@@ -207,5 +241,19 @@ class RRTnominal : public base::Planner
 
 	/** \brief Best cost found so far by algorithm */
 	base::Cost                                     bestCost_;
+
+	/* My addition */
+
+	/**
+	 * \brief The exploration bias of the sampling algorithm
+	 */
+	double 																				exploreBias_;
+
+	/**
+	 * \brief Radius of the tunnel considered during sampling
+	 */
+	double 																				radius_;
+
+	/* End of my addition */
 	
 };
