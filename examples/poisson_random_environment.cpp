@@ -69,7 +69,6 @@ int main(int argc, char **argv) {
 
   boost::shared_ptr<RRTnominal> rrtn = boost::shared_ptr<RRTnominal>(new RRTnominal(si));
   rrtn->setRange(10);
-  rrtn->setExploreBias(0.05);
   rrtn->setRadius(2.0);
 
   // rrtn->setResolution(0.5);

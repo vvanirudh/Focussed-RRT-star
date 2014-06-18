@@ -194,7 +194,11 @@ ompl::base::PlannerStatus RRTnominal::solve(const base::PlannerTerminationCondit
 	        }
 	      }
 	      else {
-	      	if (rng_.uniform01() < exploreBias_) {
+	      	double x = rng_.uniform01();
+	      	if(x < goalBias_) {
+	      		goal_s->sampleGoal(rstate);
+	      	}
+	      	else if (x < exploreBias_ + goalBias_) {
 	      		sampler_->sampleUniform(rstate);
 	      	}
 	      	else {
